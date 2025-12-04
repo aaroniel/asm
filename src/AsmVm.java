@@ -221,15 +221,14 @@ public class AsmVm {
                     int b = (int)((word >> 13) & 0xF);
                     int offField = (int)((word >> 17) & 0xFFFF);
                     int offset = signExtend(offField, 16);
-                    int bidx = b + offset;
+                    int aidx = memory[a] + offset;
                     checkAddr(dest);
-                    checkAddr(a);
-                    checkAddr(bidx);
-                    double res = Math.pow((double)memory[a], (double)memory[bidx]);
+                    checkAddr(aidx);
+                    double res = Math.pow((double)memory[aidx], (double)b);
                     long rval = (long) res;
                     memory[dest] = (int) rval;
                     System.out.printf("instr %d: pow %d %d %d %d -> memory[%d] = %d^%d = %d%n",
-                            i, dest, a, b, offset, dest, memory[a], memory[bidx], memory[dest]);
+                            i, dest, a, b, offset, dest, memory[aidx], memory[b], memory[dest]);
                     break;
                 }
                 default:
