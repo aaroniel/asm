@@ -17,8 +17,12 @@ public class AsmVm {
             if (args.length != 3) { usage(); return; }
             assemble(Paths.get(args[1]), Paths.get(args[2]));
         } else if ("run".equals(cmd)) {
-            if (args.length != 2) { usage(); return; }
-            runProgram(Paths.get(args[1]));
+            if (args.length != 2 && args.length != 3) { usage(); return; }
+            Path dumpPath = null;
+            if (args.length == 3) {
+                dumpPath = Paths.get(args[2]);
+            }
+            runProgram(Paths.get(args[1]), dumpPath);
         } else {
             usage();
         }
@@ -29,6 +33,7 @@ public class AsmVm {
         System.out.println("Usage:");
         System.out.println("  java AsmVm assemble input.asm output.bin");
         System.out.println("  java AsmVm run output.bin");
+        System.out.println("  java AsmVm run output.bin [dump.xml]");
     }
 
     // ---------- Assembler ----------
@@ -147,7 +152,7 @@ public class AsmVm {
     static void putBitsCheck(long _dummy) { /* placeholder */ }
 
     // ---------- Interpreter ----------
-    static void runProgram(Path bin) throws IOException {
+    static void runProgram(Path bin, Path dumpPath) throws IOException {
         byte[] all = Files.readAllBytes(bin);
         if (all.length % 7 != 0) {
             throw new IOException("Binary program size must be multiple of 7 bytes (one instruction). Found: " + all.length);
@@ -236,6 +241,10 @@ public class AsmVm {
         for (int i = 0; i < memory.length; i++) {
             if (memory[i] != 0) System.out.printf("  [%d] = %d%n", i, memory[i]);
         }
+        if (dumpPath != null) {
+            dumpMemoryXML(memory, dumpPath);
+            System.out.println("Memory dumped to XML file: " + dumpPath);
+        }
     }
 
     static void checkAddr(int a) {
@@ -246,5 +255,19 @@ public class AsmVm {
     static int signExtend(int value, int bits) {
         int shift = 32 - bits;
         return (value << shift) >> shift;
+    }
+
+
+    static void dumpMemoryXML(int[] memory, Path dumpFile) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(dumpFile)) {
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            writer.write("<memory>\n");
+            for (int i = 0; i < memory.length; i++) {
+                if (memory[i] != 0) {
+                    writer.write(String.format("  <cell address=\"%d\">%d</cell>\n", i, memory[i]));
+                }
+            }
+            writer.write("</memory>\n");
+        }
     }
 }
